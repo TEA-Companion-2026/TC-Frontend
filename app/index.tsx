@@ -1,16 +1,19 @@
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
     SafeAreaView,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { authService } from "../services/authService";
 import { tokenStorage } from "../services/tokenStorage";
@@ -26,11 +29,6 @@ export default function LoginScreen() {
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [errors, setErrors] = useState<LoginErrors>({});
-
-	const testUser = {
-		email: "teste@teacompanion.com",
-		password: "123456",
-	};
 
 	function isValidEmail(value: string) {
 		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -48,7 +46,7 @@ export default function LoginScreen() {
 		if (!password.trim()) {
 			newErrors.password = "Informe a senha.";
 		} else if (password.length < 6) {
-			newErrors.password = "A senha deve ter no mínimo 6 caracteres.";
+			newErrors.password = "Mínimo de 6 caracteres.";
 		}
 
 		setErrors(newErrors);
@@ -60,13 +58,9 @@ export default function LoginScreen() {
 
 		try {
 			const response = await authService.login({ email, password });
-			console.log("Login realizado para:", response.email);
-
 			await tokenStorage.saveToken(response.token);
-
 			setErrors({});
-			Alert.alert("Sucesso", "Login realizado com sucesso.");
-			router.replace("/doctor_id");
+			router.replace("/home");
 		} catch (error: any) {
 			setErrors({ general: error.message || "Erro ao realizar login." });
 		}
@@ -74,126 +68,112 @@ export default function LoginScreen() {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<StatusBar barStyle="light-content" backgroundColor="#2FAFE6" />
+			<StatusBar barStyle="dark-content" backgroundColor="#F8F8F8" />
 
-			<LinearGradient
-				colors={["#2FAFE6", "#6BC5FF"]}
-				start={{ x: 0, y: 0 }}
-				end={{ x: 1, y: 1 }}
-				style={styles.header}>
-				<TouchableOpacity style={styles.backButton}>
-					<Ionicons name="chevron-back" size={26} color="#fff" />
-				</TouchableOpacity>
+			<KeyboardAvoidingView
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+				style={{ flex: 1 }}>
+				<ScrollView
+					contentContainerStyle={styles.scrollContent}
+					showsVerticalScrollIndicator={false}>
+					<View style={styles.container}>
+						<View style={styles.logoContainer}>
+							<Image
+								source={require("../assets/images/logotipo-base-nobg.png")}
+								style={styles.logoBaseLogin}
+								resizeMode="contain"
+							/>
+							<Text style={styles.welcomeSubtitle}>
+								Acompanhamento especializado para o autismo
+							</Text>
+						</View>
 
-				<Text style={styles.headerTitle}>Entrar</Text>
-			</LinearGradient>
+						<View style={styles.formContainer}>
+							<Text style={styles.label}>Email</Text>
+							<TextInput
+								style={[styles.input, errors.email && styles.inputError]}
+								placeholder="exemplo@exemplo.com"
+								placeholderTextColor="#B7D5E8"
+								value={email}
+								onChangeText={(value) => {
+									setEmail(value);
+									setErrors((prev) => ({
+										...prev,
+										email: undefined,
+										general: undefined,
+									}));
+								}}
+								keyboardType="email-address"
+								autoCapitalize="none"
+							/>
+							{errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-			<View style={styles.container}>
-				<Text style={styles.welcome}>Bem Vindo!</Text>
+							<Text style={styles.label}>Senha</Text>
+							<View
+								style={[styles.passwordWrapper, errors.password && styles.inputError]}>
+								<TextInput
+									style={styles.passwordInput}
+									placeholder="*************"
+									placeholderTextColor="#B7D5E8"
+									secureTextEntry={!showPassword}
+									value={password}
+									onChangeText={(value) => {
+										setPassword(value);
+										setErrors((prev) => ({
+											...prev,
+											password: undefined,
+											general: undefined,
+										}));
+									}}
+								/>
+								<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+									<Ionicons
+										name={showPassword ? "eye-outline" : "eye-off-outline"}
+										size={22}
+										color="#8C99A5"
+									/>
+								</TouchableOpacity>
+							</View>
+							{errors.password && (
+								<Text style={styles.errorText}>{errors.password}</Text>
+							)}
 
-				<Text style={styles.label}>Email</Text>
-				<TextInput
-					style={[styles.input, errors.email && styles.inputError]}
-					placeholder="exemplo@exemplo.com"
-					placeholderTextColor="#B7D5E8"
-					value={email}
-					onChangeText={(value) => {
-						setEmail(value);
-						setErrors((prev) => ({
-							...prev,
-							email: undefined,
-							general: undefined,
-						}));
-					}}
-					keyboardType="email-address"
-					autoCapitalize="none"
-				/>
-				{errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+							<TouchableOpacity onPress={() => router.push("/forgot_password")}>
+								<Text style={styles.forgot}>Esqueci a Senha</Text>
+							</TouchableOpacity>
 
-				<Text style={styles.label}>Senha</Text>
-				<View
-					style={[styles.passwordWrapper, errors.password && styles.inputError]}>
-					<TextInput
-						style={styles.passwordInput}
-						placeholder="*************"
-						placeholderTextColor="#B7D5E8"
-						secureTextEntry={!showPassword}
-						value={password}
-						onChangeText={(value) => {
-							setPassword(value);
-							setErrors((prev) => ({
-								...prev,
-								password: undefined,
-								general: undefined,
-							}));
-						}}
-					/>
+							{errors.general && (
+								<Text style={styles.generalError}>{errors.general}</Text>
+							)}
 
-					<TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-						<Ionicons
-							name={showPassword ? "eye-outline" : "eye-off-outline"}
-							size={22}
-							color="#8C99A5"
-						/>
-					</TouchableOpacity>
-				</View>
-				{errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+							<TouchableOpacity style={styles.buttonWrapper} onPress={handleLogin}>
+								<LinearGradient
+									colors={["#2FAFE6", "#6BC5FF"]}
+									start={{ x: 0, y: 0 }}
+									end={{ x: 1, y: 0 }}
+									style={styles.button}>
+									<Text style={styles.buttonText}>Entrar</Text>
+								</LinearGradient>
+							</TouchableOpacity>
+						</View>
 
-				<TouchableOpacity onPress={() => router.push("/forgot_password")}>
-					<Text style={styles.forgot}>Esqueci a Senha</Text>
-				</TouchableOpacity>
+						<View style={styles.footerContainer}>
+							<View style={styles.footer}>
+								<Text style={styles.footerText}>Não tem conta? </Text>
+								<TouchableOpacity onPress={() => router.push("/register")}>
+									<Text style={styles.link}>Inscreva-se</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
 
-				{errors.general && (
-					<Text style={styles.generalError}>{errors.general}</Text>
-				)}
-
-				<TouchableOpacity style={styles.buttonWrapper} onPress={handleLogin}>
-					<LinearGradient
-						colors={["#2FAFE6", "#6BC5FF"]}
-						start={{ x: 0, y: 0 }}
-						end={{ x: 1, y: 0 }}
-						style={styles.button}>
-						<Text style={styles.buttonText}>Entrar</Text>
-					</LinearGradient>
-				</TouchableOpacity>
-
-				<Text style={styles.socialText}>ou acesse com</Text>
-
-				<View style={styles.socialButtons}>
-					<TouchableOpacity style={styles.socialButton}>
-						<LinearGradient
-							colors={["#2FAFE6", "#6BC5FF"]}
-							start={{ x: 0, y: 0 }}
-							end={{ x: 1, y: 0 }}
-							style={styles.socialGradient}>
-							<AntDesign name="google" size={24} color="#fff" />
-						</LinearGradient>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={styles.socialButton}>
-						<LinearGradient
-							colors={["#2FAFE6", "#6BC5FF"]}
-							start={{ x: 0, y: 0 }}
-							end={{ x: 1, y: 0 }}
-							style={styles.socialGradient}>
-							<FontAwesome name="facebook-square" size={24} color="#fff" />
-						</LinearGradient>
-					</TouchableOpacity>
-				</View>
-
-				<View style={styles.footer}>
-					<Text style={styles.footerText}>Não tem conta? </Text>
-					<TouchableOpacity onPress={() => router.push("/register")}>
-						<Text style={styles.link}>Inscreva-se</Text>
-					</TouchableOpacity>
-				</View>
-
-				<View style={styles.testUserBox}>
-					<Text style={styles.testUserTitle}>Usuário de teste</Text>
-					<Text style={styles.testUserText}>Email: teste@teacompanion.com</Text>
-					<Text style={styles.testUserText}>Senha: 123456</Text>
-				</View>
-			</View>
+						<View style={styles.testUserBox}>
+							<Text style={styles.testUserTitle}>Usuário de teste</Text>
+							<Text style={styles.testUserText}>Email: teste@teacompanion.com</Text>
+							<Text style={styles.testUserText}>Senha: 123456</Text>
+						</View>
+					</View>
+				</ScrollView>
+			</KeyboardAvoidingView>
 		</SafeAreaView>
 	);
 }
@@ -201,150 +181,164 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
-		backgroundColor: "#2FAFE6",
+		backgroundColor: "#F8F8F8",
 	},
-	header: {
-		height: 110,
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	headerTitle: {
-		color: "#fff",
-		fontSize: 24,
-		fontWeight: "bold",
-		marginTop: 20,
-	},
-	backButton: {
-		position: "absolute",
-		left: 20,
-		top: 50,
+	scrollContent: {
+		flexGrow: 1,
+		backgroundColor: "#F8F8F8",
 	},
 	container: {
 		flex: 1,
-		backgroundColor: "#F8F8F8",
-		padding: 20,
+		paddingHorizontal: 32,
+		paddingTop: 80,
+		paddingBottom: 30,
+		alignItems: "center",
 	},
-	welcome: {
-		fontSize: 22,
-		color: "#59B7ED",
-		fontWeight: "bold",
-		marginBottom: 20,
+	logoContainer: {
+		alignItems: "center",
+		marginBottom: 50,
+	},
+	logoBaseLogin: {
+		width: 240,
+		height: 70,
+		marginBottom: 10,
+	},
+	welcomeSubtitle: {
+		fontSize: 14,
+		color: "#8AA8B7",
+		fontWeight: "600",
+		textAlign: "center",
+	},
+	formContainer: {
+		width: "100%",
 	},
 	label: {
-		fontSize: 16,
-		marginBottom: 6,
-		color: "#2F2F2F",
-		fontWeight: "600",
+		fontSize: 14,
+		marginBottom: 8,
+		color: "#2C8EF4",
+		fontWeight: "800",
+		textTransform: "uppercase",
+		letterSpacing: 0.5,
+		marginLeft: 4,
 	},
 	input: {
-		backgroundColor: "#EAF5FB",
-		padding: 12,
-		borderRadius: 8,
-		marginBottom: 8,
-		borderWidth: 1,
-		borderColor: "transparent",
+		width: "100%",
+		height: 54,
+		backgroundColor: "#FFFFFF",
+		paddingHorizontal: 18,
+		borderRadius: 14,
+		marginBottom: 6,
+		borderWidth: 1.5,
+		borderColor: "#EAF5FB",
 		color: "#2F2F2F",
+		fontSize: 16,
 	},
 	passwordWrapper: {
+		width: "100%",
+		height: 54,
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: "#EAF5FB",
-		borderRadius: 8,
-		paddingHorizontal: 10,
-		marginBottom: 8,
-		borderWidth: 1,
-		borderColor: "transparent",
+		backgroundColor: "#FFFFFF",
+		borderRadius: 14,
+		paddingHorizontal: 18,
+		marginBottom: 6,
+		borderWidth: 1.5,
+		borderColor: "#EAF5FB",
 	},
 	passwordInput: {
 		flex: 1,
-		padding: 12,
+		height: "100%",
 		color: "#2F2F2F",
+		fontSize: 16,
 	},
 	inputError: {
-		borderColor: "#E74C3C",
+		borderColor: "#FFBABA",
+		backgroundColor: "#FFF5F5",
 	},
 	errorText: {
 		color: "#E74C3C",
 		fontSize: 12,
-		marginBottom: 10,
-		marginLeft: 2,
+		marginBottom: 14,
+		marginLeft: 8,
+		fontWeight: "600",
 	},
 	generalError: {
 		color: "#E74C3C",
 		fontSize: 13,
 		textAlign: "center",
-		marginBottom: 14,
-		fontWeight: "600",
+		marginBottom: 16,
+		fontWeight: "700",
 	},
 	forgot: {
-		textAlign: "right",
+		alignSelf: "flex-end",
 		color: "#59B7ED",
-		marginBottom: 20,
-		fontWeight: "500",
+		marginBottom: 35,
+		fontWeight: "800",
+		fontSize: 14,
 	},
 	buttonWrapper: {
-		borderRadius: 25,
+		width: "100%",
+		borderRadius: 28,
 		overflow: "hidden",
-		marginBottom: 20,
+		elevation: 4,
+		shadowColor: "#2FAFE6",
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 5,
+		marginBottom: 40,
 	},
 	button: {
-		padding: 15,
+		height: 58,
 		alignItems: "center",
+		justifyContent: "center",
 	},
 	buttonText: {
 		color: "#fff",
-		fontWeight: "bold",
-		fontSize: 16,
+		fontWeight: "900",
+		fontSize: 18,
+		textTransform: "uppercase",
+		letterSpacing: 1,
 	},
-	socialText: {
-		textAlign: "center",
-		marginBottom: 10,
-		color: "#4D4D4D",
-	},
-	socialButtons: {
-		flexDirection: "row",
-		justifyContent: "center",
-		gap: 10,
-		marginBottom: 20,
-	},
-	socialButton: {
-		borderRadius: 25,
-		overflow: "hidden",
-	},
-	socialGradient: {
-		width: 45,
-		height: 45,
-		justifyContent: "center",
+	footerContainer: {
+		width: "100%",
 		alignItems: "center",
 	},
 	footer: {
 		flexDirection: "row",
 		justifyContent: "center",
-		marginBottom: 24,
+		marginBottom: 40,
 	},
 	footerText: {
 		color: "#4D4D4D",
+		fontSize: 15,
+		fontWeight: "500",
 	},
 	link: {
-		color: "#59B7ED",
-		fontWeight: "bold",
+		color: "#2C8EF4",
+		fontWeight: "800",
+		fontSize: 15,
 	},
 	testUserBox: {
-		backgroundColor: "#EAF5FB",
-		padding: 14,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: "#D4EBF7",
+		width: "100%",
+		backgroundColor: "#FFFFFF",
+		padding: 20,
+		borderRadius: 20,
+		borderWidth: 1.5,
+		borderColor: "#EAF5FB",
+		borderStyle: "dashed",
 	},
 	testUserTitle: {
-		fontSize: 15,
-		fontWeight: "700",
-		color: "#2F2F2F",
-		marginBottom: 6,
+		fontSize: 12,
+		fontWeight: "800",
+		color: "#A0BBC8",
+		marginBottom: 10,
+		textTransform: "uppercase",
+		letterSpacing: 1.2,
 	},
 	testUserText: {
-		fontSize: 13,
+		fontSize: 14,
 		color: "#4D4D4D",
-		marginBottom: 2,
+		marginBottom: 4,
+		fontWeight: "700",
 	},
 });
