@@ -13,6 +13,7 @@ import {
 import { Ionicons, AntDesign, FontAwesome } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { userService } from "../services/userService";
 
 type Errors = {
     fullName?: string;
@@ -175,43 +176,35 @@ export default function RegisterScreen() {
         );
     }, [fullName, email, password, phone, birthDate, cpf, rg]);
 
-    function handleRegister() {
-        console.log("BOTÃO CADASTRAR FOI CLICADO");
-
+    async function handleRegister() {
         const formIsValid = validateForm();
-        console.log("Form válido?", formIsValid);
 
         if (!formIsValid) {
-            console.log("Erros de validação detectados");
             return;
         }
 
         setLoading(true);
         setErrors({});
 
-        const payload = {
-            name: fullName.trim(),
-            email: email.trim().toLowerCase(),
-            password: password,
-            phone: onlyDigits(phone),
-            birth_date: birthDate,
-            cpf: onlyDigits(cpf),
-            rg: rg.replace(/[.\-]/g, "").toUpperCase(),
-            role: "parent",
-        };
+        try {
+            await userService.create({
+                nome: fullName.trim(),
+                email: email.trim().toLowerCase(),
+                username: email.trim().toLowerCase(), // Usando email como username
+                password: password,
+            });
 
-        console.log("========== JSON ==========");
-        console.log(JSON.stringify(payload, null, 2));
-        console.log("==========================");
-
-        setLoading(false);
-
-        Alert.alert("Sucesso", "Cadastro simulado.", [
-            {
-                text: "OK",
-                onPress: () => router.replace("/"),
-            },
-        ]);
+            setLoading(false);
+            Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+                {
+                    text: "OK",
+                    onPress: () => router.replace("/"),
+                },
+            ]);
+        } catch (error: any) {
+            setLoading(false);
+            setErrors({ general: error.message || "Erro ao realizar cadastro." });
+        }
     }
 
     return (

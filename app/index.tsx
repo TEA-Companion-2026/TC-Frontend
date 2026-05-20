@@ -12,6 +12,8 @@ import {
 import { Ionicons, AntDesign, FontAwesome } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { authService } from "../services/authService";
+import { tokenStorage } from "../services/tokenStorage";
 
 type LoginErrors = {
     email?: string;
@@ -53,22 +55,21 @@ export default function LoginScreen() {
         return Object.keys(newErrors).length === 0;
     }
 
-    function handleLogin() {
+    async function handleLogin() {
         if (!validateForm()) return;
 
-        if (email.trim().toLowerCase() !== testUser.email) {
-            setErrors({ general: "Usuário não encontrado." });
-            return;
+        try {
+            const response = await authService.login({ email, password });
+            console.log("Login realizado para:", response.email);
+            
+            await tokenStorage.saveToken(response.token);
+            
+            setErrors({});
+            Alert.alert("Sucesso", "Login realizado com sucesso.");
+            router.replace("/doctor_id");
+        } catch (error: any) {
+            setErrors({ general: error.message || "Erro ao realizar login." });
         }
-
-        if (password !== testUser.password) {
-            setErrors({ general: "Senha incorreta." });
-            return;
-        }
-
-        setErrors({});
-        Alert.alert("Sucesso", "Login realizado com sucesso.");
-        router.replace("/doctor_id");
     }
 
     return (

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
     SafeAreaView,
     View,
@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     ScrollView,
     StatusBar,
+    ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -16,6 +17,8 @@ import {
     FontAwesome5,
     AntDesign,
 } from "@expo/vector-icons";
+import { comportamentoService, ComportamentoDTO } from "../services/comportamentoService";
+import { tokenStorage } from "../services/tokenStorage";
 
 const weekDays = [
     { day: "9", label: "SEG" },
@@ -49,22 +52,28 @@ const categories = [
     },
 ];
 
-const records = [
-    {
-        date: "08 Abril - Quarta - Hoje",
-        time: "10:00 am",
-        title: "Birra",
-        level: "Leve",
-    },
-    {
-        date: "06 Abril - Segunda",
-        time: "08:00 am",
-        title: "Agressividade",
-        level: "Moderada",
-    },
-];
-
 export default function HomeScreen() {
+    const [records, setRecords] = useState<ComportamentoDTO[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadRecords();
+    }, []);
+
+    async function loadRecords() {
+        try {
+            const token = await tokenStorage.getToken();
+            if (token) {
+                const data = await comportamentoService.listarTodos(token);
+                setRecords(data);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar registros:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="dark-content" backgroundColor="#F7F7F7" />
@@ -165,20 +174,28 @@ export default function HomeScreen() {
                         </TouchableOpacity>
 
                         <View style={styles.recordList}>
-                            {records.map((item, index) => (
-                                <View key={index} style={styles.recordItem}>
-                                    <View style={styles.recordBullet} />
-                                    <View style={styles.recordTextBlock}>
-                                        <Text style={styles.recordDate}>{item.date}</Text>
+                            {loading ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                records.map((item, index) => (
+                                    <View key={index} style={styles.recordItem}>
+                                        <View style={styles.recordBullet} />
+                                        <View style={styles.recordTextBlock}>
+                                            <Text style={styles.recordDate}>
+                                                {item.data ? new Date(item.data).toLocaleDateString() : "Sem data"}
+                                            </Text>
 
-                                        <View style={styles.recordBottomRow}>
-                                            <Text style={styles.recordTime}>{item.time}</Text>
-                                            <Text style={styles.recordTitleText}>{item.title}</Text>
-                                            <Text style={styles.recordLevel}>{item.level}</Text>
+                                            <View style={styles.recordBottomRow}>
+                                                <Text style={styles.recordTime}>
+                                                    {item.data ? new Date(item.data).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
+                                                </Text>
+                                                <Text style={styles.recordTitleText}>{item.observacao || "Registro"}</Text>
+                                                <Text style={styles.recordLevel}>ID: {item.tipoComportamentoId}</Text>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                            ))}
+                                ))
+                            )}
                         </View>
                     </LinearGradient>
 
@@ -195,7 +212,7 @@ export default function HomeScreen() {
                             <TouchableOpacity style={styles.statCard}>
                                 <View style={styles.statTop}>
                                     <Ionicons name="warning-outline" size={18} color="#45B8F0" />
-                                    <Text style={styles.statNumber}>11</Text>
+                                    <Text style={styles.statNumber}>{records.length}</Text>
                                 </View>
                                 <Text style={styles.statLabel}>COMPORTAMENTOS</Text>
                             </TouchableOpacity>
