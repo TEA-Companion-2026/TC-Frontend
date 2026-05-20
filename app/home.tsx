@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
     SafeAreaView,
     View,
@@ -8,6 +8,9 @@ import {
     ScrollView,
     StatusBar,
     ActivityIndicator,
+    Image,
+    Alert,
+    Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -17,48 +20,73 @@ import {
     FontAwesome5,
     AntDesign,
 } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
 import { comportamentoService, ComportamentoDTO } from "../services/comportamentoService";
 import { tokenStorage } from "../services/tokenStorage";
+import { authService } from "../services/authService";
 
-const weekDays = [
-    { day: "9", label: "SEG" },
-    { day: "10", label: "TER" },
-    { day: "11", label: "QUA", active: true },
-    { day: "12", label: "QUI" },
-    { day: "13", label: "SEX" },
-    { day: "12", label: "SAB" },
-];
+// Helper to generate the current week days
+function getWeekDays(baseDate: Date = new Date()) {
+    const days = [];
+    const current = new Date(baseDate);
+    // Adjust to Monday
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1);
+    current.setDate(diff);
+
+    const labels = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
+
+    for (let i = 0; i < 7; i++) {
+        days.push({
+            day: current.getDate().toString(),
+            label: labels[i],
+            fullDate: new Date(current),
+        });
+        current.setDate(current.getDate() + 1);
+    }
+    return days;
+}
 
 const categories = [
     {
         title: "Cadastrar\nIndivíduo",
         icon: <Feather name="clipboard" size={18} color="#45B8F0" />,
+        route: "/register_individual",
     },
     {
         title: "Doutor",
         icon: <FontAwesome5 name="stethoscope" size={17} color="#45B8F0" />,
+        route: "/doctor",
     },
     {
         title: "Remédios",
         icon: <MaterialCommunityIcons name="pill" size={18} color="#45B8F0" />,
+        route: "/medicine",
     },
     {
         title: "Registro\nde Rotina",
         icon: <Feather name="calendar" size={18} color="#45B8F0" />,
+        route: "/routine_register",
     },
     {
         title: "Registro De\nComportamento",
         icon: <MaterialCommunityIcons name="medical-bag" size={18} color="#45B8F0" />,
+        route: "/comportamento_registro",
     },
 ];
 
 export default function HomeScreen() {
     const [records, setRecords] = useState<ComportamentoDTO[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    
+    const weekDays = useMemo(() => getWeekDays(), []);
 
-    useEffect(() => {
-        loadRecords();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadRecords();
+        }, [])
+    );
 
     async function loadRecords() {
         try {
@@ -71,6 +99,40 @@ export default function HomeScreen() {
             console.error("Erro ao carregar registros:", error);
         } finally {
             setLoading(false);
+        }
+    }
+
+    const filteredRecords = useMemo(() => {
+        return records.filter(record => {
+            if (!record.data) return false;
+            const recordDate = new Date(record.data);
+            return (
+                recordDate.getDate() === selectedDate.getDate() &&
+                recordDate.getMonth() === selectedDate.getMonth() &&
+                recordDate.getFullYear() === selectedDate.getFullYear()
+            );
+        });
+    }, [records, selectedDate]);
+
+    async function handleLogout() {
+        const confirmLogout = () => {
+            authService.logout();
+            router.replace("/");
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm("Deseja realmente sair?")) {
+                confirmLogout();
+            }
+        } else {
+            Alert.alert(
+                "Sair",
+                "Deseja realmente sair da sua conta?",
+                [
+                    { text: "Cancelar", style: "cancel" },
+                    { text: "Sair", style: "destructive", onPress: confirmLogout }
+                ]
+            );
         }
     }
 
@@ -87,44 +149,18 @@ export default function HomeScreen() {
 
                     <View style={styles.header}>
                         <View style={styles.headerLeft}>
-                            <TouchableOpacity style={styles.iconCircle}>
-                                <Ionicons name="notifications-outline" size={15} color="#8AA8B7" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.iconCircle}>
-                                <Ionicons name="settings-outline" size={15} color="#8AA8B7" />
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.iconCircle}>
-                                <Feather name="search" size={14} color="#8AA8B7" />
-                            </TouchableOpacity>
+                            <Image 
+                                source={require("../assets/images/logotipo-base.png")} 
+                                style={styles.logoHeader}
+                                resizeMode="contain"
+                            />
                         </View>
 
                         <View style={styles.headerRight}>
-                            <Text style={styles.greeting}>Olá, Gabriel Curto!</Text>
-
-                            <View style={styles.avatar}>
+                            <TouchableOpacity style={styles.avatar} onPress={handleLogout}>
                                 <Ionicons name="person" size={15} color="#7A7A7A" />
-                            </View>
-                        </View>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.sectionRow}>
-                        <Text style={styles.sectionTitle}>Categorias</Text>
-                        <TouchableOpacity>
-                            <Text style={styles.seeAll}>Ver Tudo</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.categoriesRow}>
-                        {categories.map((item, index) => (
-                            <TouchableOpacity key={index} style={styles.categoryItem}>
-                                <View style={styles.categoryIcon}>{item.icon}</View>
-                                <Text style={styles.categoryText}>{item.title}</Text>
                             </TouchableOpacity>
-                        ))}
+                        </View>
                     </View>
 
                     <View style={styles.divider} />
@@ -136,9 +172,9 @@ export default function HomeScreen() {
                         style={styles.recordsContainer}
                     >
                         <View style={styles.recordsHeader}>
-                            <Text style={styles.recordsTitle}>Últimos Registros</Text>
-                            <TouchableOpacity>
-                                <Text style={styles.recordsMore}>Mês</Text>
+                            <Text style={styles.recordsTitle}>Registros Diários</Text>
+                            <TouchableOpacity onPress={() => setSelectedDate(new Date())}>
+                                <Text style={styles.recordsMore}>Hoje</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -147,37 +183,47 @@ export default function HomeScreen() {
                                 <AntDesign name="left" size={13} color="#FFFFFF" />
                             </TouchableOpacity>
 
-                            {weekDays.map((item, index) => (
-                                <View
-                                    key={index}
-                                    style={[
-                                        styles.dayCard,
-                                        item.active && styles.dayCardActive,
-                                    ]}
-                                >
-                                    <Text style={[styles.dayNumber, item.active && styles.dayNumberActive]}>
-                                        {item.day}
-                                    </Text>
-                                    <Text style={[styles.dayLabel, item.active && styles.dayLabelActive]}>
-                                        {item.label}
-                                    </Text>
-                                </View>
-                            ))}
+                            {weekDays.map((item, index) => {
+                                const isActive = 
+                                    item.fullDate.getDate() === selectedDate.getDate() &&
+                                    item.fullDate.getMonth() === selectedDate.getMonth();
+                                
+                                return (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={[
+                                            styles.dayCard,
+                                            isActive && styles.dayCardActive,
+                                        ]}
+                                        onPress={() => setSelectedDate(item.fullDate)}
+                                    >
+                                        <Text style={[styles.dayNumber, isActive && styles.dayNumberActive]}>
+                                            {item.day}
+                                        </Text>
+                                        <Text style={[styles.dayLabel, isActive && styles.dayLabelActive]}>
+                                            {item.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
 
                             <TouchableOpacity style={styles.arrowBtn}>
                                 <AntDesign name="right" size={13} color="#FFFFFF" />
                             </TouchableOpacity>
                         </View>
 
-                        <TouchableOpacity style={styles.viewAllInside}>
+                        <TouchableOpacity 
+                            style={styles.viewAllInside}
+                            onPress={() => router.push("/comportamentos_lista")}
+                        >
                             <Text style={styles.viewAllInsideText}>Ver Tudo</Text>
                         </TouchableOpacity>
 
                         <View style={styles.recordList}>
                             {loading ? (
                                 <ActivityIndicator color="#FFF" />
-                            ) : (
-                                records.map((item, index) => (
+                            ) : filteredRecords.length > 0 ? (
+                                filteredRecords.map((item, index) => (
                                     <View key={index} style={styles.recordItem}>
                                         <View style={styles.recordBullet} />
                                         <View style={styles.recordTextBlock}>
@@ -190,11 +236,15 @@ export default function HomeScreen() {
                                                     {item.data ? new Date(item.data).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"}
                                                 </Text>
                                                 <Text style={styles.recordTitleText}>{item.observacao || "Registro"}</Text>
-                                                <Text style={styles.recordLevel}>ID: {item.tipoComportamentoId}</Text>
+                                                <Text style={styles.recordLevel}>{item.tipoComportamento ? item.tipoComportamento.split(":")[0].split("(")[0].trim() : "---"}</Text>
                                             </View>
                                         </View>
                                     </View>
                                 ))
+                            ) : (
+                                <Text style={{ color: '#EAF8FF', textAlign: 'center', fontSize: 12, marginTop: 10 }}>
+                                    Nenhum registro para este dia.
+                                </Text>
                             )}
                         </View>
                     </LinearGradient>
@@ -209,7 +259,10 @@ export default function HomeScreen() {
                                 <Text style={styles.statLabel}>ROTINAS</Text>
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.statCard}>
+                            <TouchableOpacity 
+                                style={styles.statCard}
+                                onPress={() => router.push("/comportamentos_lista")}
+                            >
                                 <View style={styles.statTop}>
                                     <Ionicons name="warning-outline" size={18} color="#45B8F0" />
                                     <Text style={styles.statNumber}>{records.length}</Text>
@@ -221,9 +274,39 @@ export default function HomeScreen() {
                 </ScrollView>
 
                 <View style={styles.bottomBar}>
-                    <TouchableOpacity style={styles.floatingButton}>
-                        <MaterialCommunityIcons name="puzzle-outline" size={34} color="#FFFFFF" />
+                    {categories.slice(0, 2).map((item, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={styles.navItem}
+                            onPress={() => item.route && router.push(item.route as any)}
+                        >
+                            <View style={styles.navIcon}>{item.icon}</View>
+                            <Text style={styles.navText}>{item.title.replace("\n", " ")}</Text>
+                        </TouchableOpacity>
+                    ))}
+
+                    <TouchableOpacity 
+                        style={styles.plusButtonContainer}
+                        onPress={() => router.push("/comportamento_registro")}
+                    >
+                        <LinearGradient
+                            colors={["#2FAFE6", "#6BC5FF"]}
+                            style={styles.plusButton}
+                        >
+                            <Ionicons name="add" size={32} color="#FFFFFF" />
+                        </LinearGradient>
                     </TouchableOpacity>
+
+                    {categories.slice(2, 4).map((item, index) => (
+                        <TouchableOpacity
+                            key={index + 2}
+                            style={styles.navItem}
+                            onPress={() => item.route && router.push(item.route as any)}
+                        >
+                            <View style={styles.navIcon}>{item.icon}</View>
+                            <Text style={styles.navText}>{item.title.replace("\n", " ")}</Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
         </SafeAreaView>
@@ -278,10 +361,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 9,
     },
-    greeting: {
-        fontSize: 13,
-        color: "#5BBCEB",
-        fontWeight: "500",
+    logoHeader: {
+        width: 140,
+        height: 35,
     },
     avatar: {
         width: 30,
@@ -517,19 +599,52 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        height: 56,
-        backgroundColor: "#DDEBF5",
-        justifyContent: "flex-start",
+        height: 70,
+        backgroundColor: "#FFFFFF",
+        flexDirection: "row",
+        justifyContent: "space-around",
         alignItems: "center",
+        borderTopWidth: 1,
+        borderTopColor: "#E5EEF4",
+        paddingBottom: 5,
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
-    floatingButton: {
-        width: 62,
-        height: 62,
-        borderRadius: 31,
-        marginTop: -26,
-        backgroundColor: "#4DBCF3",
-        borderWidth: 4,
-        borderColor: "#DDEBF5",
+    navItem: {
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
+    },
+    navIcon: {
+        marginBottom: 2,
+    },
+    navText: {
+        fontSize: 9,
+        color: "#45B8F0",
+        fontWeight: "600",
+        textAlign: "center",
+    },
+    plusButtonContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: -30,
+        backgroundColor: "#FFFFFF",
+        elevation: 5,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+    },
+    plusButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: "center",
         alignItems: "center",
     },

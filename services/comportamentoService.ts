@@ -5,6 +5,10 @@ export const comportamentoService = {
     return api.get('/api/comportamento', token);
   },
 
+  async listarTipos(token: string) {
+    return api.get('/api/tipo-comportamento', token);
+  },
+
   async criar(comportamento: ComportamentoDTO, token: string) {
     return api.post('/api/comportamento', comportamento, token);
   },
@@ -26,5 +30,5 @@ export interface ComportamentoDTO {
   idComportamento?: number;
   data?: string;
   observacao?: string;
-  tipoComportamentoId?: number;
+  tipoComportamento?: string;
 }
