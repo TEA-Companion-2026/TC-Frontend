@@ -1,4 +1,8 @@
-import { Feather, FontAwesome5, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+    Feather,
+    FontAwesome5,
+    Ionicons
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -8,11 +12,10 @@ import {
     Platform,
     SafeAreaView,
     ScrollView,
-    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { BottomBar } from "../components/home/BottomBar";
 import { HomeHeader } from "../components/home/HomeHeader";
@@ -129,8 +132,6 @@ export default function HomeScreen() {
 
 	return (
 		<SafeAreaView style={styles.safeArea}>
-			<StatusBar barStyle="dark-content" backgroundColor="#F6F6F6" />
-
 			<View style={styles.root}>
 				<ScrollView
 					showsVerticalScrollIndicator={false}

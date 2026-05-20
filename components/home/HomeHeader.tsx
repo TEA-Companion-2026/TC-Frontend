@@ -1,6 +1,6 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface HomeHeaderProps {
 	onLogout: () => void;
@@ -9,7 +9,6 @@ interface HomeHeaderProps {
 export const HomeHeader: React.FC<HomeHeaderProps> = ({ onLogout }) => {
 	return (
 		<>
-			<View style={styles.topBarFake} />
 			<View style={styles.header}>
 				<View style={styles.headerLeft}>
 					<Image

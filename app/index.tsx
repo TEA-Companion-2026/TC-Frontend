@@ -167,9 +167,10 @@ export default function LoginScreen() {
 						</View>
 
 						<View style={styles.testUserBox}>
-							<Text style={styles.testUserTitle}>Usuário de teste</Text>
-							<Text style={styles.testUserText}>Email: teste@teacompanion.com</Text>
-							<Text style={styles.testUserText}>Senha: 123456</Text>
+							<Text style={styles.testUserTitle}>Usuários de teste (Senha: 123456)</Text>
+							<Text style={styles.testUserText}>resp1@teste.com</Text>
+							<Text style={styles.testUserText}>resp2@teste.com</Text>
+							<Text style={styles.testUserText}>psi@teste.com</Text>
 						</View>
 					</View>
 				</ScrollView>
@@ -299,6 +300,9 @@ const styles = StyleSheet.create({
 		textTransform: "uppercase",
 		letterSpacing: 1,
 	},
+	buttonDisabled: {
+		opacity: 0.7,
+	},
 	footerContainer: {
 		width: "100%",
 		alignItems: "center",
@@ -333,6 +337,16 @@ const styles = StyleSheet.create({
 		color: "#A0BBC8",
 		marginBottom: 10,
 		textTransform: "uppercase",
+		letterSpacing: 1.2,
+	},
+	testUserText: {
+		fontSize: 14,
+		color: "#4D4D4D",
+		marginBottom: 4,
+		fontWeight: "700",
+	},
+});
+m: "uppercase",
 		letterSpacing: 1.2,
 	},
 	testUserText: {
