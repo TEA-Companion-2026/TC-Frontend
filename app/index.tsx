@@ -3,17 +3,17 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+	Image,
+	KeyboardAvoidingView,
+	Platform,
+	SafeAreaView,
+	ScrollView,
+	StatusBar,
+	StyleSheet,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View,
 } from "react-native";
 import { authService } from "../services/authService";
 import { tokenStorage } from "../services/tokenStorage";
@@ -167,7 +167,9 @@ export default function LoginScreen() {
 						</View>
 
 						<View style={styles.testUserBox}>
-							<Text style={styles.testUserTitle}>Usuários de teste (Senha: 123456)</Text>
+							<Text style={styles.testUserTitle}>
+								Usuários de teste (Senha: 123456)
+							</Text>
 							<Text style={styles.testUserText}>resp1@teste.com</Text>
 							<Text style={styles.testUserText}>resp2@teste.com</Text>
 							<Text style={styles.testUserText}>psi@teste.com</Text>
@@ -337,16 +339,6 @@ const styles = StyleSheet.create({
 		color: "#A0BBC8",
 		marginBottom: 10,
 		textTransform: "uppercase",
-		letterSpacing: 1.2,
-	},
-	testUserText: {
-		fontSize: 14,
-		color: "#4D4D4D",
-		marginBottom: 4,
-		fontWeight: "700",
-	},
-});
-m: "uppercase",
 		letterSpacing: 1.2,
 	},
 	testUserText: {
